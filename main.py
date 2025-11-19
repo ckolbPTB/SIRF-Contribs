@@ -17,7 +17,15 @@ from sirf.contrib.partitioner import partitioner
 from collections.abc import Callable
 
 import numpy as np
-import array_api_compat.cupy as xp
+import importlib.util
+import warnings
+
+if importlib.util.find_spec("cupy") is not None:
+    import array_api_compat.cupy as xp
+else:
+    warnings.warn("cupy not found!. Using numpy as fallback", UserWarning)
+    import array_api_compat.numpy as xp
+
 from array_api_compat import to_device
 
 # import pure python re-implementation of the RDP -> only used to get diagonal of the RDP Hessian!
@@ -341,14 +349,13 @@ class Submission(Algorithm):
             # remember that the objective has to be maximized
             # posterior = log likelihood - log prior ("minus" instead of "plus"!)
             approximated_gradient = (
-                self._num_subsets
-                * (
+                (
                     (
                         self._subset_likelihood_funcs[self.subset].gradient(self.x)
                         - subset_prior_gradient
                     )
                     - self._subset_gradients[self.subset]
-                )
+                ) * self._num_subsets
                 + self._summed_subset_gradients
             )
 
