@@ -306,9 +306,17 @@ class RDP(SmoothFunctionWithDiagonalHessian):
             return self.xp.inf
 
         d, s = neighbor_difference_and_sum(x, self.xp)
-        phi = s + self.gamma * self.xp.abs(d) + self.eps
+        # phi = s + self.gamma * self.xp.abs(d) + self.eps
+        phi = self.xp.abs(d)
+        phi *= self.gamma
+        phi += s
+        phi += self.eps
 
-        tmp = (d**2) / phi
+        # tmp = (d**2) / phi
+        # reuse d to save memory
+        tmp = d
+        tmp *= tmp
+        tmp /= phi
 
         if self._weights is not None:
             tmp *= self._weights
@@ -317,9 +325,20 @@ class RDP(SmoothFunctionWithDiagonalHessian):
 
     def _gradient(self, x: Array) -> Array:
         d, s = neighbor_difference_and_sum(x, self.xp)
-        phi = s + self.gamma * self.xp.abs(d) + self.eps
+        # phi = s + self.gamma * self.xp.abs(d) + self.eps
+        tmp = self.xp.abs(d)
+        tmp *= self.gamma
+        phi = s + tmp
+        phi += self.eps
 
-        tmp = d * (2 * phi - (d + self.gamma * self.xp.abs(d))) / (phi**2)
+        # tmp = d * (2 * phi - (d + self.gamma * self.xp.abs(d))) / (phi**2)
+        tmp += d
+        tmp -= phi
+        tmp -= phi
+        tmp *= -1
+        tmp *= d
+        tmp /= phi
+        tmp /= phi
 
         if self._weights is not None:
             tmp *= self._weights
@@ -328,9 +347,19 @@ class RDP(SmoothFunctionWithDiagonalHessian):
 
     def _diag_hessian(self, x: Array) -> Array:
         d, s = neighbor_difference_and_sum(x, self.xp)
-        phi = s + self.gamma * self.xp.abs(d) + self.eps
+        # phi = s + self.gamma * self.xp.abs(d) + self.eps
+        phi = self.xp.abs(d)
+        phi *= self.gamma
+        phi += s 
+        phi += self.eps
 
-        tmp = ((s - d + self.eps) ** 2) / (phi**3)
+        # tmp = ((s - d + self.eps) ** 2) / (phi**3)
+        tmp = s - d
+        tmp += self.eps
+        tmp *= tmp
+        tmp /= phi
+        tmp /= phi
+        tmp /= phi
 
         if self._weights is not None:
             tmp *= self._weights
