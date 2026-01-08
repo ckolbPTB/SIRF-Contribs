@@ -71,7 +71,7 @@ class LBFGSBPC:
             save_interval if save_interval >= 0 else update_objective_interval
         )
         self.save_intermediate_results_path = Path(save_intermediate_results_path)
-
+        self.callbacks = None
         if auto_preconditioner:
             self.set_preconditioner()
         else:
@@ -129,14 +129,21 @@ class LBFGSBPC:
             )
             self.tmp_for_gradient.fill(np.reshape(x * self.Dinv, self.shape))
             self.tmp_for_gradient.write(filename)
+        # store result (use name "x" for CIL compatibility)
+        self.x = x
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
         self.iter += 1
 
-    def process(self, iterations=None) -> None:
+    def process(self, iterations=None, callbacks=None, verbose=1) -> None:
         r"""run upto :code:`iterations` with callback.
         Parameters
         -----------
         iterations: int, default is None, but required
             Number of iterations to run.
+        callbacks: list of Callable object, taking as argument self for CIL compatibility
+        verbose: currently ignored
         """
         if iterations is None:
             raise ValueError("`missing argument `iterations`")
@@ -147,6 +154,7 @@ class LBFGSBPC:
             with open(self.save_intermediate_results_path / "objectives.csv", "w") as f:
                 cvswriter = csv.writer(f)
                 cvswriter.writerow(("iter", "objective"))
+        self.callbacks = callbacks
         precond_init = self.initial / self.Dinv_SIRF
         self.trunc_filter.apply(precond_init)
         precond_init = precond_init.asarray().ravel()
