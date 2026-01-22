@@ -1,37 +1,23 @@
-"""Main file to modify for submissions.
-
-Once renamed or symlinked as `main.py`, it will be used by `petric.py` as follows:
-
->>> from main import Submission, submission_callbacks
->>> from petric import data, metrics
->>> algorithm = Submission(data)
->>> algorithm.run(np.inf, callbacks=metrics + submission_callbacks)
-"""
-
 import math
-import sirf.STIR as STIR
-from cil.optimisation.algorithms import Algorithm
-from cil.optimisation.utilities import callbacks
-from sirf.contrib.partitioner import partitioner
-
+import warnings
 from collections.abc import Callable
 
 import numpy as np
-import importlib.util
-import warnings
 
-if importlib.util.find_spec("cupy") is not None:
+import sirf.STIR as STIR
+from cil.optimisation.algorithms import Algorithm
+from sirf.contrib.partitioner import partitioner
+
+try:
     import array_api_compat.cupy as xp
-else:
-    warnings.warn("cupy not found!. Using numpy as fallback", UserWarning)
+except ImportError:
+    warnings.warn("cupy not found; using numpy fallback", ImportWarning, stacklevel=2)
     import array_api_compat.numpy as xp
 
 from array_api_compat import to_device
 
 # import pure python re-implementation of the RDP -> only used to get diagonal of the RDP Hessian!
-from rdp import RDP
-
-from petric import Dataset
+from .rdp import RDP
 
 
 def get_divisors(n):
@@ -59,34 +45,17 @@ def step_size_rule_1(update: int) -> float:
     return new_step_size
 
 
-class MaxIteration(callbacks.Callback):
-    """
-    The organisers try to `Submission(data).run(inf)` i.e. for infinite iterations (until timeout).
-    This callback forces stopping after `max_iteration` instead.
-    """
-
-    def __init__(self, max_iteration: int, verbose: int = 1):
-        super().__init__(verbose)
-        self.max_iteration = max_iteration
-
-    def __call__(self, algorithm: Algorithm):
-        if algorithm.iteration >= self.max_iteration:
-            raise StopIteration
-
-
-class Submission(Algorithm):
+class ALG1(Algorithm):
     """
     Better preconditioned SVRG for PETRIC (MaGeZ ALG1)
     """
 
     def __init__(
         self,
-        data: Dataset,
+        data,
         approx_num_subsets: int = 25,  # approximate number of subsets, closest divisor of num_views will be used
         update_objective_interval: int | None = None,
-        complete_gradient_epochs: tuple[int, ...] = tuple(
-            [x for x in range(0, 1000, 2)]
-        ),
+        complete_gradient_epochs: tuple[int, ...] = tuple(range(0, 1000, 2)), # noqa: B008
         step_size_update_function: Callable[[int], float] = step_size_rule_1,
         precond_update_epochs: tuple[int, ...] = (1, 2, 3),
         precond_hessian_factor: float = 1.5,
@@ -145,7 +114,8 @@ class Submission(Algorithm):
 
         if self._num_subsets not in num_views_divisors:
             raise ValueError(
-                f"Number of subsets {self._num_subsets} is not a divisor of {num_views}. Divisors are {num_views_divisors}"
+                f"Number of subsets {self._num_subsets} is not a divisor of {num_views}."
+                f" Divisors are {num_views_divisors}"
             )
 
         if self._verbose:
@@ -359,7 +329,7 @@ class Submission(Algorithm):
                 + self._summed_subset_gradients
             )
 
-        ### Objective has to be maximized -> "+" for gradient ascent
+        # ## Objective has to be maximized -> "+" for gradient ascent
         self.x = self.x + self._step_size * self._precond * approximated_gradient
         # approximated_gradient *= self._precond
         # approximated_gradient *= self._step_size
@@ -384,7 +354,3 @@ class Submission(Algorithm):
         tmp = np.arange(self._num_subsets)
         np.random.shuffle(tmp)
         self._subset_number_list = tmp.tolist()
-
-
-submission_callbacks = []
-# submission_callbacks = [MaxIteration(660)]

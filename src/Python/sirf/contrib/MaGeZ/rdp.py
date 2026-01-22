@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
-from types import ModuleType
-
 import abc
+from types import ModuleType
+from typing import TYPE_CHECKING, Union
+
 import array_api_compat.numpy as np
 from array_api_compat import device, to_device
 
@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     Array = Union[np.ndarray, cp.ndarray]  # Used for type checking
 else:
     Array = np.ndarray  # Default at runtime
+
 
 def neighbor_offsets(ndim, xp):
     # all offsets in {-1,0,1}^ndim except 0
@@ -47,7 +48,7 @@ def neighbor_difference_and_sum(x, xp):
         # center[...] and neighbor[...] have exactly the same shape
         center_sl = []
         neigh_sl = []
-        for ax, (n, o) in enumerate(zip(shape, off)):
+        for _ax, (n, o) in enumerate(zip(shape, off)):
             if o == 0:
                 # full axis in both
                 center_sl.append(slice(0, n))
@@ -97,7 +98,7 @@ def neighbor_product(x, xp):
 
         center_sl = []
         neigh_sl = []
-        for ax, (n, o) in enumerate(zip(shape, off)):
+        for _ax, (n, o) in enumerate(zip(shape, off)):
             if o == 0:
                 center_sl.append(slice(0, n))
                 neigh_sl.append(slice(0, n))
@@ -194,7 +195,7 @@ class SmoothFunction(abc.ABC):
         return res
 
     def prox_function(self, z: Array, x: Array, T: Array) -> float:
-        """returns the function h(z) = \sum_i f_i(z) + 0.5 * \sum_i (z_i - x_i)^2 / T_i
+        r"""returns the function h(z) = \sum_i f_i(z) + 0.5 * \sum_i (z_i - x_i)^2 / T_i
         which when minimized over z is the proximal operator of the function at x
         """
         return self.__call__(z) + 0.5 * float((((z - x) ** 2) / T).sum())
@@ -350,7 +351,7 @@ class RDP(SmoothFunctionWithDiagonalHessian):
         # phi = s + self.gamma * self.xp.abs(d) + self.eps
         phi = self.xp.abs(d)
         phi *= self.gamma
-        phi += s 
+        phi += s
         phi += self.eps
 
         # tmp = ((s - d + self.eps) ** 2) / (phi**3)
