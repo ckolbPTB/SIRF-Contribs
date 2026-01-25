@@ -11,10 +11,12 @@
 #
 # Copyright 2025 University College London
 
+import csv
 import numpy as np
 import numpy.typing as npt
 import sirf.STIR as STIR
 import os
+from pathlib import Path
 from scipy.optimize import fmin_l_bfgs_b
 from typing import Callable, Optional, List
 
@@ -68,7 +70,8 @@ class LBFGSBPC:
         self.save_interval = (
             save_interval if save_interval >= 0 else update_objective_interval
         )
-        self.save_intermediate_results_path = save_intermediate_results_path
+        self.save_intermediate_results_path = Path(save_intermediate_results_path)
+        self.callbacks = None
         if auto_preconditioner:
             self.set_preconditioner()
         else:
@@ -107,8 +110,15 @@ class LBFGSBPC:
             self.update_objective_interval > 0
             and self.iter % self.update_objective_interval == 0
         ):
-            self.loss.append(-self.precond_objfun_value(x))
+            loss = -self.precond_objfun_value(x)
+            self.loss.append(loss)
             self.iterations.append(self.iter)
+            if self.save_intermediate_results_path is not None:
+                with open(
+                    self.save_intermediate_results_path / "objectives.csv", "a"
+                ) as f:
+                    cvswriter = csv.writer(f)
+                    cvswriter.writerow((self.iter, loss))
         if (
             self.save_intermediate_results_path is not None
             and self.save_interval > 0
@@ -119,21 +129,32 @@ class LBFGSBPC:
             )
             self.tmp_for_gradient.fill(np.reshape(x * self.Dinv, self.shape))
             self.tmp_for_gradient.write(filename)
+        # store result (use name "x" for CIL compatibility)
+        self.x = x
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
         self.iter += 1
 
-    def process(self, iterations=None) -> None:
+    def process(self, iterations=None, callbacks=None, verbose=1) -> None:
         r"""run upto :code:`iterations` with callback.
         Parameters
         -----------
         iterations: int, default is None, but required
             Number of iterations to run.
+        callbacks: list of Callable object, taking as argument self for CIL compatibility
+        verbose: currently ignored
         """
         if iterations is None:
             raise ValueError("`missing argument `iterations`")
         if self.Dinv is None:
             raise RuntimeError("Need to set preconditioner first")
-        if self.save_intermediate_results_path is not None and self.save_interval > 0:
+        if self.save_intermediate_results_path is not None:
             os.makedirs(self.save_intermediate_results_path, exist_ok=True)
+            with open(self.save_intermediate_results_path / "objectives.csv", "w") as f:
+                cvswriter = csv.writer(f)
+                cvswriter.writerow(("iter", "objective"))
+        self.callbacks = callbacks
         precond_init = self.initial / self.Dinv_SIRF
         self.trunc_filter.apply(precond_init)
         precond_init = precond_init.asarray().ravel()
