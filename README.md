@@ -27,3 +27,4 @@ pip install git+https://github.com/SyneRBI/SIRF-Contribs
 - example functions and notebooks for MAP optimisation with PET (or SPECT)
   - BSREM [implementation](./src/Python/sirf/contrib/BSREM) and [notebook](./src/notebooks/BSREM_illustration.ipynb) using a preconditioned gradient ascent algorithm.
   - LBFGS-B-PC [implementation](./src/Python/sirf/contrib/LBFGSBPC) and [notebook](./src/notebooks/LBFGSBPC_illustration.ipynb) using a preconditioned LBFGS-B algorithm (calling SciPy).
+  - MaGeZ ALG1 [implementation](./src/Python/sirf/contrib/MaGeZ), the winner of the first [PETRIC](https://github.com/SyneRBI/PETRIC)
