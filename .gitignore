@@ -2,6 +2,8 @@
 *.pyc
 **/__pycache__/
 **/.ipynb_checkpoints/
+/dist/
+*.egg*
 
 .DS_Store
 *.log

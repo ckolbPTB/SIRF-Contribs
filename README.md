@@ -3,16 +3,22 @@ Users contributions to SIRF.
 
 This space is for contributions that are not quite ready yet to be incorporated into SIRF's main repository. We welcome the sharing of any contributions that might help other researchers. We hope that widely used features can then be finalised, and then added to the main SIRF repository.
 
-Please add your contributions as a pull request. 
+Please add your contributions as a pull request.
 
-- Jupyter notebooks can be added to [./src/notebooks](./src/notebooks). 
+- Jupyter notebooks can be added to [./src/notebooks](./src/notebooks).
 - Python code should be added to [./src/Python/sirf/contrib](./src/Python/sirf/contrib) with an `__init__.py` file. In this fashion, once a user has checked out this repository, they can use it in their code with, for example:
 
-```
+```py
 from sirf.contrib import kcl
 ```
 
-# Current contents
+## Installation
+
+```sh
+pip install git+https://github.com/SyneRBI/SIRF-Contribs
+```
+
+## Current contents
 
 - [KCL priors](./src/Python/sirf/contrib/kcl) - de Pierro, Bowsher, etc. priors
 - [brainweb](./src/Python/sirf/contrib/brainweb-utilities) - preliminary script to create brainweb data with some extra features.
