@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=80", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src/Python"}
+
+[tool.setuptools.packages.find]
+where = ["src/Python"]
+include = ["sirf.contrib", "sirf.contrib.*"]
+
+[project]
+name = "sirf-contrib"
+dynamic = ["version"]
+description = "User contributions to SIRF"
+license = "Apache-2.0"
+license-files = ["LICEN[CS]E"]
+maintainers = [{name="SIRF developers", email="tomography+sirf@stfc.ac.uk"}]
+requires-python = ">=3.8"
+readme = "README.md"
+keywords = ["tomography", "optimisation"]
+dependencies = [
+    #"sirf", "cil", # missing from PyPI
+    "numpy", "scipy", "matplotlib", "docopt", "array-api-compat", "brainweb",
+]
+[project.optional-dependencies]
+all = [
+    "cupy", # MaGeZ.rdp
+    "nibabel", # brainweb-utilities
+]
